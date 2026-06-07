@@ -1,0 +1,52 @@
+services:
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    ports:
+      - "${API_PORT:-8080}:8080"
+    volumes:
+      - sqlite-data:/app/data
+    environment:
+      - NODE_ENV=production
+      - PORT=8080
+      - DATABASE_PATH=/app/data/dspm.db
+      - LOG_LEVEL=info
+    healthcheck:
+      test: ["CMD", "sh", "/app/healthcheck.sh"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+    ports:
+      - "${WEB_PORT:-3000}:3000"
+    environment:
+      - VITE_API_URL=http://localhost:${API_PORT:-8080}
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.25'
+        reservations:
+          memory: 128M
+
+volumes:
+  sqlite-data:
+

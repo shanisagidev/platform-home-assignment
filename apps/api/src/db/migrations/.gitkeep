@@ -1,0 +1,3 @@
+# Migrations directory
+# SQLite schema is defined inline in sqlite.ts for simplicity
+

@@ -1,0 +1,140 @@
+[
+  {
+    "id": "asset_s3_001",
+    "type": "S3_BUCKET",
+    "location": "us-east-1",
+    "metadata": {
+      "name": "customer-data-prod",
+      "owner": "data-engineering",
+      "createdAt": "2024-01-15T08:00:00Z",
+      "sizeBytes": 1073741824,
+      "objectCount": 15234
+    }
+  },
+  {
+    "id": "asset_s3_002",
+    "type": "S3_BUCKET",
+    "location": "eu-west-1",
+    "metadata": {
+      "name": "analytics-exports",
+      "owner": "analytics-team",
+      "createdAt": "2024-02-20T14:30:00Z",
+      "sizeBytes": 536870912,
+      "objectCount": 8921
+    }
+  },
+  {
+    "id": "asset_db_001",
+    "type": "RDS_DATABASE",
+    "location": "us-east-1",
+    "metadata": {
+      "name": "users-primary",
+      "engine": "PostgreSQL",
+      "version": "14.9",
+      "instanceClass": "db.r5.large",
+      "encrypted": true
+    }
+  },
+  {
+    "id": "asset_db_002",
+    "type": "RDS_DATABASE",
+    "location": "us-west-2",
+    "metadata": {
+      "name": "orders-replica",
+      "engine": "PostgreSQL",
+      "version": "14.9",
+      "instanceClass": "db.r5.xlarge",
+      "encrypted": false
+    }
+  },
+  {
+    "id": "asset_api_001",
+    "type": "API_KEY",
+    "location": "global",
+    "metadata": {
+      "name": "external-partner-api",
+      "createdAt": "2023-06-01T00:00:00Z",
+      "lastUsed": "2024-11-15T16:45:00Z",
+      "permissions": ["read:users", "write:orders", "admin:reports", "read:analytics", "write:exports", "admin:config"]
+    }
+  },
+  {
+    "id": "asset_api_002",
+    "type": "API_KEY",
+    "location": "global",
+    "metadata": {
+      "name": "internal-service-key",
+      "createdAt": "2024-08-10T09:00:00Z",
+      "lastUsed": "2024-12-01T11:30:00Z",
+      "permissions": ["read:users", "read:orders"]
+    }
+  },
+  {
+    "id": "asset_svc_001",
+    "type": "SERVICE_ACCOUNT",
+    "location": "us-east-1",
+    "metadata": {
+      "name": "etl-processor",
+      "email": "etl-processor@project.iam.gserviceaccount.com",
+      "createdAt": "2023-03-15T10:00:00Z",
+      "keyRotatedAt": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "id": "asset_storage_001",
+    "type": "GCS_BUCKET",
+    "location": "asia-northeast1",
+    "metadata": {
+      "name": "apac-user-uploads",
+      "owner": "apac-ops",
+      "createdAt": "2024-05-01T02:00:00Z",
+      "classification": null
+    }
+  },
+  {
+    "id": "asset_storage_002",
+    "type": "AZURE_BLOB",
+    "location": "westeurope",
+    "metadata": {
+      "name": "compliance-archives",
+      "owner": "legal-team",
+      "createdAt": "2022-01-01T00:00:00Z",
+      "retentionDays": 2555,
+      "classification": "CONFIDENTIAL"
+    }
+  },
+  {
+    "id": "asset_shadow_001",
+    "type": "DROPBOX",
+    "location": "unknown",
+    "metadata": {
+      "name": "marketing-shared",
+      "discoveredAt": "2024-11-20T09:15:00Z",
+      "fileCount": 342,
+      "sharedWith": ["external-agency@partner.com"]
+    }
+  },
+  {
+    "id": "asset_db_003",
+    "type": "DYNAMODB_TABLE",
+    "location": "us-east-1",
+    "metadata": {
+      "name": "session-store",
+      "createdAt": "2024-03-01T00:00:00Z",
+      "itemCount": 1523456,
+      "encrypted": true
+    }
+  },
+  {
+    "id": "asset_token_001",
+    "type": "ACCESS_TOKEN",
+    "location": "global",
+    "metadata": {
+      "name": "ci-cd-deploy-token",
+      "createdAt": "2024-05-15T08:00:00Z",
+      "scope": "repo:write,packages:read,actions:write",
+      "lastRotated": "2024-06-01T00:00:00Z"
+    }
+  }
+]
+
