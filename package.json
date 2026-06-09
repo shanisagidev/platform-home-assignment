@@ -10,8 +10,13 @@
     "test:report": "npx playwright show-report"
   },
   "devDependencies": {
-    "@playwright/test": "^1.40.0",
-    "@types/node": "^20.10.0",
+    "@types/node": "^20.19.42",
     "typescript": "^5.3.0"
+  },
+  "dependencies": {
+    "@playwright/test": "^1.60.0",
+    "install": "^0.13.0",
+    "npx": "^10.2.2",
+    "playwright": "^1.60.0"
   }
 }
