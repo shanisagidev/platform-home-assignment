@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from "@playwright/test";
 import {
   API_BASE_URL,
   login,
@@ -8,10 +8,10 @@ import {
   waitForAutoRemediation,
   resetTestData,
   type Alert,
-} from '../utils/api-helpers';
+} from "../utils/api-helpers";
 
-const CREDENTIALS = { username: 'admin', password: 'Aa123456' };
-const COMMENT_TEXT = 'Remediation verified successfully and issue is resolved';
+const CREDENTIALS = { username: "admin", password: "Aa123456" };
+const COMMENT_TEXT = "Remediation verified successfully and issue is resolved";
 
 /*
   Description:
@@ -21,45 +21,48 @@ const COMMENT_TEXT = 'Remediation verified successfully and issue is resolved';
   - Start another scan.
 */
 
-test.describe('Verify Alert lifecycle: Auto Remediation (REST API)', () => {
-  let authToken: string;
+test.describe("Verify Alert lifecycle: Auto Remediation (REST API)", () => {
+  test("should complete full auto-remediation alert lifecycle", async ({
+    request,
+  }) => {
+    // Two scans (2 × 90s) + auto-remediation (300s) + buffer
+    test.setTimeout(600_000);
 
-  test.beforeEach(async ({ request }) => {
     // --- Login ---
-    authToken = await login(request, CREDENTIALS);
-    expect(authToken, 'Auth token should be present').toBeTruthy();
-    console.log('Login successful, auth token acquired');
-  });
+    const authToken = await login(request, CREDENTIALS);
+    expect(authToken, "Auth token should be present").toBeTruthy();
+    console.log("Login successful, auth token acquired");
 
-  test('should complete full auto-remediation alert lifecycle', async ({ request }) => {
     const headers = { Authorization: `Bearer ${authToken}` };
 
     // --- Step 1: Start a scan to ensure auto-remediate alerts exist ---
     const scan = await startScan(request, headers);
-    expect(scan.id, 'Scan ID should be present').toBeTruthy();
+    expect(scan.id, "Scan ID should be present").toBeTruthy();
     console.log(`Step 1: Scan started with id=${scan.id}`);
 
     // --- Step 2: Wait for scan to complete ---
-    await test.step('Wait for scan to complete', async () => {
+    await test.step("Wait for scan to complete", async () => {
       await waitForScanToComplete(request, headers, scan.id);
       console.log(`Step 2: Scan ${scan.id} completed`);
     });
 
     // --- Step 3: Find an alert with Auto Remediate ON in OPEN or REMEDIATION_IN_PROGRESS ---
-    let targetAlertId!: string;
-    await test.step('Find alert with Auto Remediate ON', async () => {
+    let targetAlertId = '';
+    await test.step("Find alert with Auto Remediate ON", async () => {
       targetAlertId = await findAutoRemediateAlert(request, headers);
-      expect(
-        targetAlertId,
-        'An alert with Auto Remediate ON in OPEN or REMEDIATION_IN_PROGRESS status should exist',
-      ).toBeTruthy();
       console.log(`Step 3: Target alert found with id=${targetAlertId}`);
     });
+    expect(
+      targetAlertId,
+      "An alert with Auto Remediate ON in OPEN or REMEDIATION_IN_PROGRESS status should exist",
+    ).toBeTruthy();
 
     // --- Step 4: Poll until remediation completes (REMEDIATED_WAITING_FOR_CUSTOMER) ---
-    await test.step('Wait for auto-remediation to complete', async () => {
+    await test.step("Wait for auto-remediation to complete", async () => {
       await waitForAutoRemediation(request, headers, targetAlertId);
-      console.log(`Step 4: Auto-remediation complete for alert ${targetAlertId}`);
+      console.log(
+        `Step 4: Auto-remediation complete for alert ${targetAlertId}`,
+      );
     });
 
     // --- Step 5: Change status to RESOLVED ---
@@ -67,12 +70,17 @@ test.describe('Verify Alert lifecycle: Auto Remediation (REST API)', () => {
       `${API_BASE_URL}/api/alerts/${targetAlertId}`,
       {
         headers,
-        data: { status: 'RESOLVED' },
+        data: { status: "RESOLVED" },
       },
     );
-    expect(resolveRes.status(), 'Status change to RESOLVED should succeed').toBe(200);
+    expect(
+      resolveRes.status(),
+      "Status change to RESOLVED should succeed",
+    ).toBe(200);
     const resolvedAlert: Alert = await resolveRes.json();
-    expect(resolvedAlert.status, 'Alert status should be RESOLVED').toBe('RESOLVED');
+    expect(resolvedAlert.status, "Alert status should be RESOLVED").toBe(
+      "RESOLVED",
+    );
     console.log(`Step 5: Alert ${targetAlertId} status changed to RESOLVED`);
 
     // --- Step 6: Add comment ---
@@ -83,10 +91,12 @@ test.describe('Verify Alert lifecycle: Auto Remediation (REST API)', () => {
         data: { message: COMMENT_TEXT },
       },
     );
-    expect(commentRes.status(), 'Comment should be created').toBe(201);
+    expect(commentRes.status(), "Comment should be created").toBe(201);
     const comment = await commentRes.json();
-    expect(comment.message, 'Comment message should match').toBe(COMMENT_TEXT);
-    console.log(`Step 6: Comment added to alert ${targetAlertId}: "${comment.message}"`);
+    expect(comment.message, "Comment message should match").toBe(COMMENT_TEXT);
+    console.log(
+      `Step 6: Comment added to alert ${targetAlertId}: "${comment.message}"`,
+    );
 
     // --- Step 7: Verify comment is persisted on the alert ---
     const alertWithCommentsRes = await request.get(
@@ -98,21 +108,24 @@ test.describe('Verify Alert lifecycle: Auto Remediation (REST API)', () => {
     const addedComment = alertWithComments.comments?.find(
       (c) => c.message === COMMENT_TEXT,
     );
-    expect(addedComment, 'Comment should be visible on the alert').toBeTruthy();
+    expect(addedComment, "Comment should be visible on the alert").toBeTruthy();
     console.log(`Step 7: Comment verified on alert ${targetAlertId}`);
 
     // --- Step 8: Start another scan ---
     const newScan = await startScan(request, headers);
-    expect(newScan.id, 'New scan should have an ID').toBeTruthy();
-    expect(newScan.status, 'New scan should be RUNNING').toBe('RUNNING');
+    expect(newScan.id, "New scan should have an ID").toBeTruthy();
+    expect(newScan.status, "New scan should be RUNNING").toBe("RUNNING");
     console.log(`Step 8: New scan started with id=${newScan.id}`);
 
     // --- Step 9: Verify no identical alert was re-detected after the scan ---
     // The system intentionally re-detects resolved auto-remediated alerts on the next scan.
     // This step is expected to FAIL — proving re-detection occurred.
-    await test.step('Verify no identical alert was re-detected', async () => {
+    // Step 9 is a known bug: the system re-detects resolved auto-remediated alerts on the next scan.
+    await test.step("Verify no identical alert was re-detected", async () => {
       await waitForScanToComplete(request, headers, newScan.id);
-      console.log(`Step 9: New scan ${newScan.id} completed, checking for re-detected alerts`);
+      console.log(
+        `Step 9: New scan ${newScan.id} completed, checking for re-detected alerts`,
+      );
 
       const alertsRes = await request.get(
         `${API_BASE_URL}/api/alerts?policyId=${resolvedAlert.policyId}`,
@@ -127,7 +140,7 @@ test.describe('Verify Alert lifecycle: Auto Remediation (REST API)', () => {
           a.id !== targetAlertId &&
           a.violationType === resolvedAlert.violationType &&
           a.assetDisplayName === resolvedAlert.assetDisplayName &&
-          a.status !== 'RESOLVED',
+          a.status !== "RESOLVED",
       );
 
       if (reDetectedAlert) {
@@ -145,7 +158,8 @@ test.describe('Verify Alert lifecycle: Auto Remediation (REST API)', () => {
 
   // --- Cleanup: reset test data after each test ---
   test.afterEach(async ({ request }) => {
-    await resetTestData(request, { Authorization: `Bearer ${authToken}` });
-    console.log('Cleanup: test data reset');
+    const cleanupToken = await login(request, CREDENTIALS);
+    await resetTestData(request, { Authorization: `Bearer ${cleanupToken}` });
+    console.log("Cleanup: test data reset");
   });
 });

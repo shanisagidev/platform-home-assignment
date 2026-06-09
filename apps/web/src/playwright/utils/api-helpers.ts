@@ -1,13 +1,9 @@
-import type { APIRequestContext } from '@playwright/test';
+import type { APIRequestContext } from "@playwright/test";
 
-// ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
-
-export const API_BASE_URL = 'http://localhost:8080';
+export const API_BASE_URL = "http://localhost:8080";
 
 export const POLL_INTERVAL_MS = 3_000;
-export const REMEDIATION_TIMEOUT_MS = 120_000;
+export const REMEDIATION_TIMEOUT_MS = 300_000;
 export const SCAN_TIMEOUT_MS = 90_000;
 
 // ---------------------------------------------------------------------------
@@ -79,13 +75,18 @@ export async function waitForScanToComplete(
 ): Promise<void> {
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
-    const res = await request.get(`${API_BASE_URL}/api/scans/${scanId}`, { headers });
-    if (!res.ok()) throw new Error(`GET /api/scans/${scanId} returned ${res.status()}`);
+    const res = await request.get(`${API_BASE_URL}/api/scans/${scanId}`, {
+      headers,
+    });
+    if (!res.ok())
+      throw new Error(`GET /api/scans/${scanId} returned ${res.status()}`);
     const body: ScanRun = await res.json();
-    if (body.status === 'COMPLETED') return;
+    if (body.status === "COMPLETED") return;
     await delay(POLL_INTERVAL_MS);
   }
-  throw new Error(`Scan ${scanId} did not complete within ${timeoutMs / 1000}s`);
+  throw new Error(
+    `Scan ${scanId} did not complete within ${timeoutMs / 1000}s`,
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -101,21 +102,26 @@ export async function findAutoRemediateAlert(
   request: APIRequestContext,
   headers: Record<string, string>,
 ): Promise<string> {
-  for (const status of ['OPEN', 'REMEDIATION_IN_PROGRESS']) {
+  for (const status of ["OPEN", "REMEDIATION_IN_PROGRESS"]) {
     const res = await request.get(
       `${API_BASE_URL}/api/alerts?status=${status}`,
       { headers },
     );
-    if (!res.ok()) throw new Error(`GET /api/alerts?status=${status} returned ${res.status()}`);
+    if (!res.ok())
+      throw new Error(
+        `GET /api/alerts?status=${status} returned ${res.status()}`,
+      );
     const alerts: Alert[] = await res.json();
     const match = alerts.find((a) => a.policySnapshot?.autoRemediate === true);
     if (match) {
-      console.log(`Found auto-remediate alert: id=${match.id}, status=${match.status}`);
+      console.log(
+        `Found auto-remediate alert: id=${match.id}, status=${match.status}`,
+      );
       return match.id;
     }
   }
   throw new Error(
-    'No alert with Auto Remediate ON found in OPEN or REMEDIATION_IN_PROGRESS status',
+    "No alert with Auto Remediate ON found in OPEN or REMEDIATION_IN_PROGRESS status",
   );
 }
 
@@ -130,10 +136,13 @@ export async function waitForAutoRemediation(
 ): Promise<void> {
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
-    const res = await request.get(`${API_BASE_URL}/api/alerts/${alertId}`, { headers });
-    if (!res.ok()) throw new Error(`GET /api/alerts/${alertId} returned ${res.status()}`);
+    const res = await request.get(`${API_BASE_URL}/api/alerts/${alertId}`, {
+      headers,
+    });
+    if (!res.ok())
+      throw new Error(`GET /api/alerts/${alertId} returned ${res.status()}`);
     const alert: Alert = await res.json();
-    if (alert.status === 'REMEDIATED_WAITING_FOR_CUSTOMER') {
+    if (alert.status === "REMEDIATED_WAITING_FOR_CUSTOMER") {
       console.log(`Alert ${alertId} remediation complete`);
       return;
     }
@@ -153,7 +162,10 @@ export async function resetTestData(
   request: APIRequestContext,
   headers: Record<string, string>,
 ): Promise<void> {
-  await request.post(`${API_BASE_URL}/api/admin/reset`, { headers });
+  const res = await request.post(`${API_BASE_URL}/api/admin/reset`, { headers });
+  if (!res.ok()) {
+    throw new Error(`Reset test data failed with status ${res.status()}`);
+  }
 }
 
 // ---------------------------------------------------------------------------

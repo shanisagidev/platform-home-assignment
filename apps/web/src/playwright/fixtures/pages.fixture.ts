@@ -1,8 +1,8 @@
-import { test as base } from '@playwright/test';
-import { LoginPage } from '../pages/login-page';
-import { AlertsPage } from '../pages/alerts-page';
-import { PoliciesPage } from '../pages/policies-page';
-import { UpperNavbar } from '../pages/upper-navbar';
+import { test as base } from "@playwright/test";
+import { LoginPage } from "../pages/login-page";
+import { AlertsPage } from "../pages/alerts-page";
+import { PoliciesPage } from "../pages/policies-page";
+import { UpperNavbar } from "../pages/upper-navbar";
 
 export type PageFixtures = {
   loginPage: LoginPage;
@@ -29,4 +29,4 @@ export const test = base.extend<PageFixtures>({
   },
 });
 
-export { expect } from '@playwright/test';
+export { expect } from "@playwright/test";
