@@ -18,6 +18,7 @@
     "forceConsistentCasingInFileNames": true
   },
   "include": ["src"],
+  "exclude": ["src/playwright"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }
 
