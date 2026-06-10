@@ -116,23 +116,55 @@ Validates the auto-remediation lifecycle using direct REST API calls (no browser
 
 ## Prerequisites
 
-- **Docker** and **Docker Compose** must be running (starts the API on `http://localhost:8080` and the web app on `http://localhost:3000`)
-- **Node.js** ≥ 18
-- Playwright browsers installed
+| Requirement | Version | Notes |
+|-------------|---------|-------|
+| Docker Desktop | Latest | Must be running before starting the stack |
+| Docker Compose | v2 | Included with Docker Desktop; or `brew install docker-compose` on macOS |
+| Node.js | ≥ 18 | Required for running tests |
+| Playwright browsers | — | Installed via `npx playwright install` (first time only) |
 
 ---
 
-## Setup
+## How to Start the System
+
+All commands are run from the **repo root** (`platform-home-assignment/`).
 
 ### 1. Start the application stack
 
 ```bash
-docker-compose up --build
+docker compose up -d
 ```
 
-Wait for both services to be healthy before running tests.
+This starts two services:
 
-### 2. Install dependencies
+| Service | URL |
+|---------|-----|
+| Web UI (React) | http://localhost:3000 |
+| API (Express + SQLite) | http://localhost:8080 |
+
+### 2. Verify the stack is healthy
+
+Wait ~10 seconds, then run:
+
+```bash
+curl http://localhost:8080/api/health
+```
+
+Expected response: `{ "status": "ok" }`
+
+To stop the stack:
+
+```bash
+docker compose down
+```
+
+To reset the database (wipe all data and restart fresh):
+
+```bash
+docker compose down -v && docker compose up -d
+```
+
+### 3. Install test dependencies
 
 ```bash
 # From the repo root
@@ -144,9 +176,47 @@ npx playwright install
 
 ---
 
-## Running the Tests
+## How to Run UI Tests
 
-All commands are run from the **repo root** (`platform-home-assignment/`).
+The UI test (`alert-life-cycle.spec.ts`) launches a real Chromium browser and interacts with the web app at `http://localhost:3000`.
+
+> The application stack must be running before executing UI tests.
+
+```bash
+# Run headlessly (default)
+npx playwright test alert-life-cycle.spec.ts
+
+# Run with a visible browser window
+npx playwright test alert-life-cycle.spec.ts --headed
+
+# Run in interactive UI mode (step through actions live)
+npx playwright test alert-life-cycle.spec.ts --ui
+
+# Run with the debugger (pauses at each step)
+npx playwright test alert-life-cycle.spec.ts --debug
+```
+
+---
+
+## How to Run API Tests
+
+The API test (`auto-remediation-api.spec.ts`) makes direct REST calls to `http://localhost:8080` — no browser is launched.
+
+> The application stack must be running before executing API tests.
+
+```bash
+# Run the API test
+npx playwright test auto-remediation-api.spec.ts
+
+# Run with verbose output
+npx playwright test auto-remediation-api.spec.ts --reporter=line
+```
+
+> **Note:** Step 9 in this test is marked as a **known expected failure** (`test.fail()`). It documents a bug where resolved auto-remediated alerts are re-detected on the next scan. Playwright reports it as an "expected failure" — not a CI error.
+
+---
+
+## Running All Tests
 
 | Command | Description |
 |---------|-------------|
@@ -156,20 +226,54 @@ All commands are run from the **repo root** (`platform-home-assignment/`).
 | `npm run test:debug` | Run with the step-by-step debugger |
 | `npm run test:report` | Open the last HTML test report |
 
-### Run a specific test file
+### View results
 
-```bash
-npx playwright test alert-life-cycle.spec.ts
-npx playwright test auto-remediation-api.spec.ts
-```
-
-### Run with trace / video on failure
-
-Traces and videos are automatically captured on failure (configured in `playwright.config.ts`). View them via the HTML report:
+Traces, screenshots, and videos are automatically captured on failure. View them via the HTML report:
 
 ```bash
 npm run test:report
 ```
+
+---
+
+## Troubleshooting
+
+### Tests fail immediately — cannot connect to server
+
+Make sure the Docker stack is up and healthy:
+
+```bash
+docker compose ps
+curl http://localhost:8080/api/health
+```
+
+### Tests leave dirty data between runs
+
+Each test cleans up after itself, but if a test was aborted mid-run, data may remain. Reset manually:
+
+```bash
+docker compose down -v && docker compose up -d
+```
+
+### UI test times out waiting for scan or remediation
+
+The backend remediation can take up to 5 minutes. The test timeout is set to 10 minutes to accommodate this. If you see consistent timeouts, check API logs:
+
+```bash
+docker compose logs api -f
+```
+
+### Port 3000 or 8080 already in use
+
+Stop the conflicting process or change ports in a `.env` file (see the root `README.md` Port Conflicts section).
+
+---
+
+## Known Issues
+
+| Issue | Test | Status |
+|-------|------|--------|
+| Resolved auto-remediated alerts are re-detected on the next scan | `auto-remediation-api.spec.ts` Step 9 | Known bug — marked `test.fail()`, reported as expected failure |
 
 ---
 
